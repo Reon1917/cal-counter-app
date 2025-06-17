@@ -1,6 +1,6 @@
 import { createClient } from '../lib/supabase/server'
 import { redirect } from 'next/navigation'
-import CameraCapture from './components/CameraCapture'
+import FoodUpload from './components/FoodUpload'
 import MainLayout from './components/MainLayout'
 
 export default async function Home() {
@@ -15,8 +15,8 @@ export default async function Home() {
   }
 
   return (
-    <MainLayout user={user}>
-      <CameraCapture />
+    <MainLayout>
+      <FoodUpload />
     </MainLayout>
   )
 }
