@@ -1,14 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
-import { Text, View } from 'react-native';
 import './global.css';
+import CameraScreen from './screens/CameraScreen';
 
 export default function App() {
   return (
-    <View className="flex-1 bg-white items-center justify-center">
-      <Text className="text-lg font-semibold text-gray-800">
-        Open up App.tsx to start working on your app!
-      </Text>
-      <StatusBar style="auto" />
-    </View>
+    <>
+      <CameraScreen />
+      <StatusBar style="light" />
+    </>
   );
 }
