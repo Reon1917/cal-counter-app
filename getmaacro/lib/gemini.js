@@ -29,6 +29,6 @@ Constraints:
 `;
 
 export const GEMINI_CONFIG = {
-  model: 'gemini-2.0-flash',
+  model: 'gemini-2.5-flash-preview-05-20',
   systemInstruction: GEMINI_SYSTEM_PROMPT
 }; 

@@ -12,32 +12,67 @@ export default function CameraCapture() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [nutritionData, setNutritionData] = useState(null)
   const [cameraActive, setCameraActive] = useState(false)
+  const [cameraLoading, setCameraLoading] = useState(false)
   const [facingMode, setFacingMode] = useState('environment') // back camera
   
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
 
   const startCamera = useCallback(async () => {
+    setCameraLoading(true)
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
+      // Stop any existing stream first
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop())
+      }
+
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera not supported in this browser')
+      }
+
+      const constraints = {
         video: {
           facingMode,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        }
-      })
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 }
+        },
+        audio: false
+      }
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
       
       setStream(mediaStream)
       setCameraActive(true)
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
+        // Ensure video plays
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current.play().catch(console.error)
+        }
       }
     } catch (error) {
       console.error('Error accessing camera:', error)
-      alert('Camera access denied. Please enable camera permissions.')
+      setCameraActive(false)
+      setStream(null)
+      
+      let errorMessage = 'Camera access failed. '
+      if (error.name === 'NotAllowedError') {
+        errorMessage += 'Please enable camera permissions in your browser settings.'
+      } else if (error.name === 'NotFoundError') {
+        errorMessage += 'No camera found on this device.'
+      } else if (error.name === 'NotSupportedError') {
+        errorMessage += 'Camera not supported on this device.'
+      } else {
+        errorMessage += 'Please check your camera permissions and try again.'
+      }
+      
+      alert(errorMessage)
+    } finally {
+      setCameraLoading(false)
     }
-  }, [facingMode])
+  }, [facingMode, stream])
 
   const stopCamera = useCallback(() => {
     if (stream) {
@@ -142,10 +177,20 @@ export default function CameraCapture() {
             </div>
             <Button 
               onClick={startCamera}
-              className="w-full h-12 text-base font-medium bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
+              disabled={cameraLoading}
+              className="w-full h-12 text-base font-medium bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:opacity-50"
             >
-              <Camera className="w-5 h-5 mr-2" />
-              Open Camera
+              {cameraLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Starting Camera...
+                </>
+              ) : (
+                <>
+                  <Camera className="w-5 h-5 mr-2" />
+                  Open Camera
+                </>
+              )}
             </Button>
           </Card>
         </div>
@@ -159,6 +204,12 @@ export default function CameraCapture() {
             playsInline
             muted
             className="w-full h-full object-cover"
+            onError={(e) => {
+              console.error('Video error:', e)
+              setCameraActive(false)
+              setStream(null)
+              alert('Video playback failed. Please try again.')
+            }}
           />
           
           {/* Camera controls - positioned for thumb reach */}
